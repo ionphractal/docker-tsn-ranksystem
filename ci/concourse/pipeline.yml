@@ -10,7 +10,7 @@ resources:
   icon: docker
   source:
     repository: php
-    tag: 7-apache
+    tag: 7.4-apache
 - name: docker-tsn-ranksystem
   type: registry-image
   icon: docker
@@ -43,7 +43,7 @@ jobs:
       - name: image
 
       params:
-        DOCKERFILE: git-docker-tsn-ranksystem/Dockerfile
+        CONTEXT: git-docker-tsn-ranksystem
 
       run:
         path: build
