@@ -20,12 +20,32 @@ resources:
     password: ((dockerhub.password))
 
 jobs:
-- name: build-docker
+- name: build-docker-image
   plan:
   - get: docker-baseimage
     trigger: true
   - get: git-docker-tsn-ranksystem
     trigger: true
+  - task: image-tags
+    config:
+      platform: linux
+      image_resource:
+        type: registry-image
+        source:
+          repository: alpine
+
+      inputs:
+      - name: git-docker-tsn-ranksystem
+
+      outputs:
+      - name: version
+
+      run:
+        path: sh
+        args:
+        - -c
+        - grep "^ARG VERSION" git-docker-tsn-ranksystem/Dockerfile | awk -F'=' '{print $2}' | tee version/image-tags
+
   - task: build
     privileged: true
     config:
@@ -35,6 +55,9 @@ jobs:
         type: registry-image
         source:
           repository: vito/oci-build-task
+
+      caches:
+      - path: cache
 
       inputs:
       - name: git-docker-tsn-ranksystem
@@ -51,4 +74,5 @@ jobs:
   - put: docker-tsn-ranksystem
     params:
       image: image/image.tar
+      additional_tags: version/image-tags
 
