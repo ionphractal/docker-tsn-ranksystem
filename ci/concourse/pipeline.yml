@@ -4,7 +4,18 @@ resources:
   type: git
   icon: github-circle
   source:
-    uri: https://github.com/ionphractal/docker-tsn-ranksystem.git
+    uri: git@github.com:ionphractal/docker-tsn-ranksystem.git
+    branch: master
+    private_key: ((git.github_private_key))
+    git_config:
+      user.name: ((git.user))
+      user.email: ((git.email))
+- name: git-tsn-ranksystem
+  type: github-release
+  icon: github-circle
+  source:
+    owner: Newcomer1989
+    repository: TSN-Ranksystem
 - name: docker-baseimage
   type: registry-image
   icon: docker
@@ -20,6 +31,47 @@ resources:
     password: ((dockerhub.password))
 
 jobs:
+- name: update-version
+  plan:
+  - get: git-docker-tsn-ranksystem
+    trigger: false
+  - get: git-tsn-ranksystem
+    trigger: true
+  - task: create-commit
+    config:
+      platform: linux
+      image_resource:
+        type: registry-image
+        source:
+          repository: alpine
+
+      inputs:
+      - name: git-docker-tsn-ranksystem
+      - name: git-tsn-ranksystem
+
+      outputs:
+      - name: git-docker-tsn-ranksystem
+
+      run:
+        path: sh
+        args:
+        - -c
+        - |
+          apk update
+          apk add git
+          git config --global user.name "((git.user))"
+          git config --global user.email "((git.email))"
+          release_version=$(cat git-tsn-ranksystem/tag)
+          commit_sha=$(cat git-tsn-ranksystem/commit_sha)
+          sed -i 's#^ARG VERSION=.*#ARG VERSION='$release_version'#' git-docker-tsn-ranksystem/Dockerfile
+          cd git-docker-tsn-ranksystem
+          git show
+          git commit -m "Update to $release_version $commit_sha" || true
+
+  - put: git-docker-tsn-ranksystem
+    params:
+      repository: git-docker-tsn-ranksystem
+
 - name: build-docker-image
   plan:
   - get: docker-baseimage
