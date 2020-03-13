@@ -1,0 +1,1 @@
+*/1 * * * * root /cronjob/cronjob.sh 2>/proc/1/fd/2 1>/proc/1/fd/1

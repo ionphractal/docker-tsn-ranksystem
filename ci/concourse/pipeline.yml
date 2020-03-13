@@ -1,0 +1,54 @@
+---
+resources:
+- name: git-docker-tsn-ranksystem
+  type: git
+  icon: github-circle
+  source:
+    uri: https://github.com/ionphractal/docker-tsn-ranksystem.git
+- name: docker-baseimage
+  type: registry-image
+  icon: docker
+  source:
+    repository: php
+    tag: 7-apache
+- name: docker-tsn-ranksystem
+  type: registry-image
+  icon: docker
+  source:
+    repository: ionphractal/tsn-ranksystem
+    username: ((dockerhub.username))
+    password: ((dockerhub.password))
+
+jobs:
+- name: build-docker
+  plan:
+  - get: docker-baseimage
+    trigger: true
+  - get: git-docker-tsn-ranksystem
+    trigger: true
+  - task: build
+    privileged: true
+    config:
+      platform: linux
+
+      image_resource:
+        type: registry-image
+        source:
+          repository: vito/oci-build-task
+
+      inputs:
+      - name: git-docker-tsn-ranksystem
+
+      outputs:
+      - name: image
+
+      params:
+        DOCKERFILE: git-docker-tsn-ranksystem/Dockerfile
+
+      run:
+        path: build
+
+  - put: docker-tsn-ranksystem
+    params:
+      image: image/image.tar
+
